@@ -1,0 +1,88 @@
+<!doctype html>
+<meta charset="UTF-8">
+<html ng-app="myApp">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+</head>
+<body>
+<div ng-controller="myCtrl">
+    <div ng-if="status.all_stations_closed === true" style="background-color: #005fc9; color: #FFF; text-align: center; font-size: 1.5em">
+        <br>
+        Alle stasjonene er stengte for øyeblikket. <br>Enten er det vinter eller har det inntrufet en katastrofe!
+        <br>Vi henter data til deg uansett :)
+        <hr>
+    </div>
+    <div ng-repeat="station in stations | orderBy: 'title' ">
+        <b>{{station.title}}:</b>
+        {{station.subtitle}}
+        <span ng-repeat="a in av" ng-if="a.id === station.id">
+            <br>
+            Plasser: {{a.availability.locks}}
+            <br>
+            Ledige sykler: {{a.availability.bikes}}
+            <br>
+            <a href="https://www.google.com/maps/search/?api=1&query={{station.center.latitude}},{{station.center.longitude}}" target="_blank">
+                Plassering på kart
+            </a> (åpnes i en ny fane)
+        </span>
+
+        <span ng-if="isArray(status.stations_closed)">
+            <p ng-repeat="st in status.stations_closed" ng-if="st.id === a.id">
+                STASJONEN ER IKKE OPERATIV
+            </p>
+        </span>
+        <br>
+
+        <hr>
+    </div>
+
+</div>
+
+<script>
+    var app = angular.module('myApp', []);
+
+    app.controller('myCtrl',['$scope','$http','$interval', function($scope, $http, $interval) {
+        $scope.isArray = angular.isArray;
+
+
+        var start = function(){
+            $http({
+                method: 'GET',
+                url: 'api.php/status',
+            }).then(function (response) {
+                $scope.status = response.data.status;
+
+            }, function (res) {
+                var temp = res.statusText;
+            });
+
+            $http({
+                method: 'GET',
+                url: 'api.php/stations/availability',
+            }).then(function (response) {
+                $scope.av = response.data.stations;
+
+            }, function (res) {
+                var temp = res.statusText;
+            });
+
+            $http({
+                method: 'GET',
+                url: 'api.php/stations',
+            }).then(function (response) {
+                $scope.stations = response.data.stations;
+                $scope.Temp = response.statusText;
+            }, function (res) {
+                var temp = res.statusText;
+            });
+
+        }
+
+        start();
+
+        $interval(start,10000);
+
+    }]);
+</script>
+</body>
+</html>
